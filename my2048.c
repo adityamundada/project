@@ -14,6 +14,7 @@ unsigned int score = 0;
 
 void PrintBoard(unsigned char board[SIZE][SIZE]);
 bool slide(unsigned char array[SIZE]);
+unsigned char findTarget(unsigned char array[SIZE], unsigned char x, unsigned char stop);
 void rotateBoard(unsigned char board[SIZE][SIZE]);
 bool moveUp(unsigned char board[SIZE][SIZE]);
 bool moveLeft(unsigned char board[SIZE][SIZE]);
@@ -175,6 +176,50 @@ void PrintBoard(unsigned char board[SIZE][SIZE]) {
 }
 
 bool slide(unsigned char array[SIZE]) {
+	bool success = false;
+	unsigned char x, t, stop = 0;
+
+	for(x = 0; x < SIZE; x++) {
+		if(array[x] != 0) {
+			t = findTarget(array, x, stop);
+			
+			if(t != x) { /* if target is not original position, then move or merge */
+				if(array[t] == 0) { /* if target is zero, this is a move */
+					array[t] = array[x];
+				} 
+				else if(array[t] == array[x]) {
+					array[t]++; /* merge (increase power of two) */
+					score = score + (unsigned int)1<<array[t]; /* increase score */
+					stop = t + 1; /* set stop to avoid double merge */
+				}
+				array[x] = 0;
+				success = true;
+			}
+		}
+	}
+	return success;
+}
+
+unsigned char findTarget(unsigned char array[SIZE], unsigned char x, unsigned char stop) {
+	unsigned char t;	
+	if(x == 0) { /* if the position is already on the first, don't evaluate */
+		return x;
+	}
+	
+	for(t = x-1; t >= 0; t--) {
+		if(array[t] != 0) {
+			if(array[t] != array[x]) { /* merge is not possible, take next position */
+				return t + 1;
+			}
+			return t;
+		} 
+		else {	
+			if (t==stop) { /* we should not slide further, return this one */
+				return t;
+			}
+		}
+	}
+	return x;
 }
 
 
