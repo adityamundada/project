@@ -1,3 +1,22 @@
+/*****************************************************************************
+  * Copyright (C) 2015 Aditya Mundada mundadaar14.comp@coep.ac.in
+  *
+  * This program is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation; either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  * GNU Lesser General Public License for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License
+  * along with this program; if not, write to the Free Software Foundation,
+  * Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+/*****************************************************************************/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,21 +31,22 @@
 unsigned int score = 0;
 
 
-void PrintBoard(unsigned char board[SIZE][SIZE]);
-bool slide(unsigned char array[SIZE]);
-unsigned char findTarget(unsigned char array[SIZE], unsigned char x, unsigned char stop);
-void rotateBoard(unsigned char board[SIZE][SIZE]);
-bool moveUp(unsigned char board[SIZE][SIZE]);
-bool moveLeft(unsigned char board[SIZE][SIZE]);
-bool moveDown(unsigned char board[SIZE][SIZE]);
-bool moveRight(unsigned char board[SIZE][SIZE]);
-bool CheckGameEnd(unsigned char board[SIZE][SIZE]);
-void addRandom(unsigned char board[SIZE][SIZE]);
 void BoardInit(unsigned char board[SIZE][SIZE]);
+void PrintBoard(unsigned char board[SIZE][SIZE]);
+void AddRandom(unsigned char board[SIZE][SIZE]);
+bool CheckGameEnd(unsigned char board[SIZE][SIZE]);
+unsigned char CountNoOfEmptyTiles(unsigned char board[SIZE][SIZE]);
+bool Slide(unsigned char array[SIZE]);
+unsigned char Target(unsigned char array[SIZE], unsigned char x, unsigned char stop);
+bool Up(unsigned char board[SIZE][SIZE]);
+bool Left(unsigned char board[SIZE][SIZE]);
+bool Down(unsigned char board[SIZE][SIZE]);
+bool Right(unsigned char board[SIZE][SIZE]);
+void Rotate(unsigned char board[SIZE][SIZE]);
 
 
 int main(int argc, char *argv[]) {
-	unsigned char board[SIZE][SIZE]; /* SIZE = 4 */
+	unsigned char board[SIZE][SIZE]; // SIZE = 4 
 	char ch;
 	bool success;
 
@@ -43,22 +63,22 @@ int main(int argc, char *argv[]) {
 			case 97:	// 'a' key
 			case 104:	// 'h' key
 			case 68:	// left arrow
-				success = moveLeft(board);  
+				success = Left(board);  
 				break;
 			case 100:	// 'd' key
 			case 108:	// 'l' key
 			case 67:	// right arrow
-				success = moveRight(board); 
+				success = Right(board); 
 				break;
 			case 119:	// 'w' key
 			case 107:	// 'k' key
 			case 65:	// up arrow
-				success = moveUp(board);    
+				success = Up(board);    
 				break;
 			case 115:	// 's' key
 			case 106:	// 'j' key
 			case 66:	// down arrow
-				success = moveDown(board);  
+				success = Down(board);  
 				break;
 			default: 
 				success = false;
@@ -66,7 +86,7 @@ int main(int argc, char *argv[]) {
 		if(success) {
 			PrintBoard(board);
 			usleep(150000); // slight delay before the next random number is added
-			addRandom(board);
+			AddRandom(board);
 			PrintBoard(board);
 			if(CheckGameEnd(board)) {
 				printf("         GAME OVER          \n");
@@ -104,14 +124,14 @@ void BoardInit(unsigned char board[SIZE][SIZE]) {
 			board[x][y] = 0;
 		}
 	}
-	addRandom(board);
-	addRandom(board);
+	AddRandom(board);
+	AddRandom(board);
 	PrintBoard(board);
 	score = 0;
 }
 
 
-void addRandom(unsigned char board[SIZE][SIZE]) {
+void AddRandom(unsigned char board[SIZE][SIZE]) {
 	static bool initialized = false;
 	unsigned char x, y;
 	unsigned char r, len = 0;
@@ -175,13 +195,13 @@ void PrintBoard(unsigned char board[SIZE][SIZE]) {
 	printf("        ←,↑,→,↓ or q        \n"); /* Ctrl+Shift+U and then: 2190 for left arrow, 2192 for right arrow, 2191 for up 							     arrow, 2193 for down arrow */
 }
 
-bool slide(unsigned char array[SIZE]) {
+bool Slide(unsigned char array[SIZE]) {
 	bool success = false;
 	unsigned char x, t, stop = 0;
 
 	for(x = 0; x < SIZE; x++) {
 		if(array[x] != 0) {
-			t = findTarget(array, x, stop);
+			t = Target(array, x, stop);
 			
 			if(t != x) { /* if target is not original position, then move or merge */
 				if(array[t] == 0) { /* if target is zero, this is a move */
@@ -200,7 +220,7 @@ bool slide(unsigned char array[SIZE]) {
 	return success;
 }
 
-unsigned char findTarget(unsigned char array[SIZE], unsigned char x, unsigned char stop) {
+unsigned char Target(unsigned char array[SIZE], unsigned char x, unsigned char stop) {
 	unsigned char t;	
 	if(x == 0) { /* if the position is already on the first, don't evaluate */
 		return x;
@@ -214,7 +234,7 @@ unsigned char findTarget(unsigned char array[SIZE], unsigned char x, unsigned ch
 			return t;
 		} 
 		else {	
-			if (t==stop) { /* we should not slide further, return this one */
+			if (t==stop) { /* we should not Slide further, return this one */
 				return t;
 			}
 		}
@@ -223,45 +243,74 @@ unsigned char findTarget(unsigned char array[SIZE], unsigned char x, unsigned ch
 }
 
 
-bool moveUp(unsigned char board[SIZE][SIZE]) {
+bool Up(unsigned char board[SIZE][SIZE]) {
 }
 
 
-void rotateBoard(unsigned char board[SIZE][SIZE]) { /* Rotates clockwise */
+void Rotate(unsigned char board[SIZE][SIZE]) { /* Rotates clockwise */
 }
 
-bool moveLeft(unsigned char board[SIZE][SIZE]) {
+bool Left(unsigned char board[SIZE][SIZE]) {
 	bool success;
-	rotateBoard(board);
-	success = moveUp(board);
-	rotateBoard(board);
-	rotateBoard(board);
-	rotateBoard(board);
+	Rotate(board);
+	success = Up(board);
+	Rotate(board);
+	Rotate(board);
+	Rotate(board);
 	return success;
 }
 
-bool moveDown(unsigned char board[SIZE][SIZE]) {
+bool Down(unsigned char board[SIZE][SIZE]) {
 	bool success;
-	rotateBoard(board);
-	rotateBoard(board);
-	success = moveUp(board);
-	rotateBoard(board);
-	rotateBoard(board);
+	Rotate(board);
+	Rotate(board);
+	success = Up(board);
+	Rotate(board);
+	Rotate(board);
 	return success;
 }
 
-bool moveRight(unsigned char board[SIZE][SIZE]) {
+bool Right(unsigned char board[SIZE][SIZE]) {
 	bool success;
-	rotateBoard(board);
-	rotateBoard(board);
-	rotateBoard(board);
-	success = moveUp(board);
-	rotateBoard(board);
+	Rotate(board);
+	Rotate(board);
+	Rotate(board);
+	success = Up(board);
+	Rotate(board);
 	return success;
 }
 
 
 bool CheckGameEnd(unsigned char board[SIZE][SIZE]) {
+	bool end = true;
+	
+	if(CountNoOfEmptyTiles(board) > 0) 
+		return false;
+		
+	if(findPairDown(board)) 
+		return false;
+		
+	Rotate(board);
+	
+	if(findPairDown(board)) 
+		ended = false;
+		
+	Rotate(board);
+	Rotate(board);
+	Rotate(board);
+	
+	return end;
 }
 
-
+unsigned char CountNoOfEmptyTiles(unsigned char board[SIZE][SIZE]) {
+	unsigned char x,y;
+	unsigned char count = 0;
+	for(x = 0; x < SIZE; x++) {
+		for(y = 0; y < SIZE; y++) {
+			if(board[x][y] == 0) {
+				count++;
+			}
+		}
+	}
+	return count;
+}
