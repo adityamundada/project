@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <unistd.h> // for usleep()
+#include <termios.h> // for buffered input
 
 
 #define SIZE 4
@@ -31,10 +32,12 @@
 unsigned int score = 0;
 
 
+void BufferedInput(bool enable);
 void BoardInit(unsigned char board[SIZE][SIZE]);
 void PrintBoard(unsigned char board[SIZE][SIZE]);
 void AddRandom(unsigned char board[SIZE][SIZE]);
 bool CheckGameEnd(unsigned char board[SIZE][SIZE]);
+bool findPairDown(unsigned char board[SIZE][SIZE]);
 unsigned char CountNoOfEmptyTiles(unsigned char board[SIZE][SIZE]);
 bool Slide(unsigned char array[SIZE]);
 unsigned char Target(unsigned char array[SIZE], unsigned char x, unsigned char stop);
@@ -53,9 +56,9 @@ int main(int argc, char *argv[]) {
 	printf("\n\nClick ENTER after every move\n\n"); /* Have make it buffered input */
 	
 	printf("\033[?25l\033[2J"); /* "\033[?25l" hides terminal's cursor, "\033[2J" clears terminal's display screen. These are ANSI 						command sequences */
-
 	 
 	BoardInit(board);
+	BufferedInput(false);
 	
 	while(true) {
 		ch = getchar();
@@ -97,7 +100,7 @@ int main(int argc, char *argv[]) {
 			printf("        QUIT? (y/n)         \n");
 			ch = getchar();
 			if(ch == 'y') {
-				exit(0);
+				break;
 			}
 			PrintBoard(board);
 		}
@@ -111,9 +114,30 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	BufferedInput(true);
+	
 	printf("\033[?25h"); /* ANSI command sequence to show the cursor */
 
 	return 0; 
+}
+
+
+void BufferedInput(bool enable) { // buffered input, i.e, without pressing ENTER after every move
+	static bool enabled = true;
+	static struct termios old;
+	struct termios new;
+
+	if(enable && !enabled) {
+		tcsetattr(STDIN_FILENO,TCSANOW,&old); // restore the former settings
+		enabled = true; // set the new state
+	} 
+	else if(!enable && enabled) {
+		tcgetattr(STDIN_FILENO, &new); // get the terminal settings for standard input
+		old = new; // we want to keep the old setting to restore them at the end
+		new.c_lflag &=(~ICANON & ~ECHO); // disable canonical mode (buffered i/o) and local echo
+		tcsetattr(STDIN_FILENO,TCSANOW, &new); // set the new settings immediately
+		enabled = false; // set the new state
+	}
 }
 
 
@@ -195,6 +219,7 @@ void PrintBoard(unsigned char board[SIZE][SIZE]) {
 	printf("        ←,↑,→,↓ or q        \n"); /* Ctrl+Shift+U and then: 2190 for left arrow, 2192 for right arrow, 2191 for up 							     arrow, 2193 for down arrow */
 }
 
+
 bool Slide(unsigned char array[SIZE]) {
 	bool success = false;
 	unsigned char x, t, stop = 0;
@@ -209,7 +234,7 @@ bool Slide(unsigned char array[SIZE]) {
 				} 
 				else if(array[t] == array[x]) {
 					array[t]++; /* merge (increase power of two) */
-					score = score + (unsigned int)1<<array[t]; /* increase score */
+					score += (unsigned int)1<<array[t]; /* increase score */
 					stop = t + 1; /* set stop to avoid double merge */
 				}
 				array[x] = 0;
@@ -219,6 +244,7 @@ bool Slide(unsigned char array[SIZE]) {
 	}
 	return success;
 }
+
 
 unsigned char Target(unsigned char array[SIZE], unsigned char x, unsigned char stop) {
 	unsigned char t;	
@@ -244,11 +270,29 @@ unsigned char Target(unsigned char array[SIZE], unsigned char x, unsigned char s
 
 
 bool Up(unsigned char board[SIZE][SIZE]) {
+	bool success = false;
+	unsigned char x;
+	for(x = 0; x < SIZE; x++) {
+		success = success | Slide(board[x]);
+	}
+	return success;
 }
 
 
 void Rotate(unsigned char board[SIZE][SIZE]) { /* Rotates clockwise */
+	unsigned char i, j, n = SIZE;
+	unsigned char temp;
+	for(i = 0; i < n/2; i++) {
+		for(j = i; j < n-i-1; j++) {
+			temp = board[i][j];
+			board[i][j] = board[j][n-i-1];
+			board[j][n-i-1] = board[n-i-1][n-j-1];
+			board[n-i-1][n-j-1] = board[n-j-1][i];
+			board[n-j-1][i] = temp;
+		}
+	}
 }
+
 
 bool Left(unsigned char board[SIZE][SIZE]) {
 	bool success;
@@ -259,6 +303,7 @@ bool Left(unsigned char board[SIZE][SIZE]) {
 	Rotate(board);
 	return success;
 }
+
 
 bool Down(unsigned char board[SIZE][SIZE]) {
 	bool success;
@@ -293,13 +338,26 @@ bool CheckGameEnd(unsigned char board[SIZE][SIZE]) {
 	Rotate(board);
 	
 	if(findPairDown(board)) 
-		ended = false;
+		end = false;
 		
 	Rotate(board);
 	Rotate(board);
 	Rotate(board);
 	
 	return end;
+}
+
+
+bool findPairDown(unsigned char board[SIZE][SIZE]) {
+	bool success = false;
+	unsigned char x, y;
+	for(x = 0; x < SIZE; x++) {
+		for(y = 0; y < SIZE-1; y++) {
+			if(board[x][y] == board[x][y + 1]) 
+				return true;
+		}
+	}
+	return success;
 }
 
 unsigned char CountNoOfEmptyTiles(unsigned char board[SIZE][SIZE]) {
